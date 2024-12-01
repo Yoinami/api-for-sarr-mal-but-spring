@@ -1,6 +1,15 @@
-package com.yoinami.sarr_mal_api.controllers;
+package com.yoinami.sarr_mal_api.controller;
 
+import com.yoinami.sarr_mal_api.model.LoginRequest;
+import com.yoinami.sarr_mal_api.model.LoginResponse;
 import com.yoinami.sarr_mal_api.restservice.Greeting;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
 
 
@@ -18,9 +27,33 @@ public class UserController {
     }
 
     //Login User
+    @Autowired
+    private UserDetailsService userDetailsService;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtHelper jwtHelper;
+
     @PostMapping("/login")
-    public String login(@RequestParam("username") String username, @RequestParam("password") String password) {
-        return "username: " + username + "\npassword: " + password + "\nLogin Successfully";
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
+        this.doAuthenticate(loginRequest.getUsername(), loginRequest.getPassword());
+        UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getUsername());
+        String token = this.jwtHelper.generateToken(userDetails);
+        LoginResponse response = LoginResponse.builder()
+                .token(token)
+                .userName(userDetails.getUsername()).build();
+        return ResponseEntity.ok(response);
+    }
+
+    private void doAuthenticate(String username, String password) {
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username, password);
+        try {
+            authenticationManager.authenticate(authentication);
+        } catch (BadCredentialsException e) {
+            throw new BadCredentialsException("Invalid Username or Password!");
+        }
     }
 
     //Delete User
