@@ -3,6 +3,7 @@ package com.yoinami.sarr_mal_api.controller;
 import com.yoinami.sarr_mal_api.model.LoginRequest;
 import com.yoinami.sarr_mal_api.model.LoginResponse;
 import com.yoinami.sarr_mal_api.restservice.Greeting;
+import com.yoinami.sarr_mal_api.security.JwtHelperUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -23,7 +24,14 @@ public class UserController {
     //Register User
     @PostMapping("/register")
     public String register() {
+        System.out.println("Going into register: ");
         return "Registered Successfully";
+    }
+
+    //Test Endpoint
+    @PostMapping("/test")
+    public String test() {
+        return "I dont know what to say to you man";
     }
 
     //Login User
@@ -34,7 +42,7 @@ public class UserController {
     private AuthenticationManager authenticationManager;
 
     @Autowired
-    private JwtHelper jwtHelper;
+    private JwtHelperUtils jwtHelper;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
@@ -47,14 +55,29 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    private void doAuthenticate(String username, String password) {
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username, password);
-        try {
-            authenticationManager.authenticate(authentication);
-        } catch (BadCredentialsException e) {
-            throw new BadCredentialsException("Invalid Username or Password!");
-        }
+//    private void doAuthenticate(String username, String password) {
+//        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username, password);
+//        try {
+//            authenticationManager.authenticate(authentication);
+//        } catch (BadCredentialsException e) {
+//            throw new BadCredentialsException("Invalid Username or Password!");
+//        }
+//    }
+private void doAuthenticate(String username, String password) {
+    System.out.println("Authenticating: " + username);
+    System.out.println("password: " + password);
+    try {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(username, password)
+        );
+        System.out.println("Finish Authenticating: " + username);
+    } catch (Exception e) {
+        System.out.println("Authentication failed: " + e.getMessage());
+        throw e; // Re-throw if you want to propagate the error.
     }
+}
+
+
 
     //Delete User
     @DeleteMapping("/delete_me")

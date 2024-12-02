@@ -1,13 +1,17 @@
 package com.yoinami.sarr_mal_api.security;
 
+import com.yoinami.sarr_mal_api.SecretConfig;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +23,10 @@ public class JwtHelperUtils {
 
     public static final long JWT_TOKEN_VALIDITY = 5 * 60 * 60;
 
-    private SecretKey secret = Keys.secretKeyFor(SignatureAlgorithm.HS512);
+    private final String secretKeyBase64 = SecretConfig.getSecretKeyBase64();
+
+    private final SecretKey secretKey = Keys.hmacShaKeyFor(Base64.getDecoder().decode(secretKeyBase64));
+
 
     public String getUsernameFromToken(String token) {
         return getClaimFromToken(token, Claims::getSubject);
@@ -35,8 +42,13 @@ public class JwtHelperUtils {
     }
 
     private Claims getAllClaimsFromToken(String token) {
-        return Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody();
+        return Jwts.parser()
+                .setSigningKey(secretKey)  // If `secret` is a SecretKey, this works fine.
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
+
 
     private Boolean isTokenExpired(String token) {
         final Date expiration = getExpirationDateFromToken(token);
@@ -53,7 +65,7 @@ public class JwtHelperUtils {
 
         return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY * 1000))
-                .signWith(SignatureAlgorithm.HS512, secret).compact();
+                .signWith(SignatureAlgorithm.HS512, secretKey).compact();
     }
 
     //validate token

@@ -13,22 +13,21 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @Configuration
 public class CustomSecurityConfig {
 
-    @Autowired
-    private AccountRepo accountRepo;
-
-    @Bean
-    public UserDetailsService userDetailsService() {
-
-        return new CustomUserDetailsService();
-    }
-
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
-        return authenticationConfiguration.getAuthenticationManager();
-    }
+////    @Autowired
+////    private AccountRepo accountRepo;
+//
+//    @Bean
+//    public UserDetailsService userDetailsService() {
+//        return new CustomerUserDetailService.CustomUserDetailsService();
+//    }
+//
+//    @Bean
+//    public PasswordEncoder passwordEncoder() {
+//        return new BCryptPasswordEncoder();
+//    }
+//
+//    @Bean
+//    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+//        return authenticationConfiguration.getAuthenticationManager();
+//    }
 }
