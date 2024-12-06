@@ -2,9 +2,13 @@ package com.yoinami.sarr_mal_api.controller;
 
 import com.yoinami.sarr_mal_api.model.LoginRequest;
 import com.yoinami.sarr_mal_api.model.LoginResponse;
-import com.yoinami.sarr_mal_api.restservice.Greeting;
+import com.yoinami.sarr_mal_api.model.User;
+import com.yoinami.sarr_mal_api.repository.UserRepository;
 import com.yoinami.sarr_mal_api.security.JwtHelperUtils;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -12,6 +16,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @RestController
@@ -21,32 +30,45 @@ public class UserController {
      * This class concern with Managing User Info and Auth
      * */
 
-    //Register User
-    @PostMapping("/register")
-    public String register() {
-        System.out.println("Going into register: ");
-        return "Registered Successfully";
-    }
-
-    //Test Endpoint
-    @PostMapping("/test")
-    public String test() {
-        return "I dont know what to say to you man";
-    }
-
-    //Login User
     @Autowired
     private UserDetailsService userDetailsService;
 
     @Autowired
-    private AuthenticationManager authenticationManager;
-
-    @Autowired
     private JwtHelperUtils jwtHelper;
 
+    @Autowired
+    private ControllerHelper controllerHelper;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    List<User> userList = new ArrayList<>();
+
+
+    //Register User
+    @PostMapping("/register")
+    public String register() {
+        try {
+            User newUser = controllerHelper.createUserClass();
+            userRepository.save(newUser);
+        } catch (Exception e) {
+            return e.getMessage();
+        }
+
+        return "Registered Successfully";
+    }
+
+    //Test Endpoint
+    @PostMapping("/showAll")
+    public List<User> showAll() {
+        userList = userRepository.findAll();
+        return userList;
+    }
+
+    //Login User
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
-        this.doAuthenticate(loginRequest.getUsername(), loginRequest.getPassword());
+        controllerHelper.doAuthenticate(loginRequest.getUsername(), loginRequest.getPassword());
         UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getUsername());
         String token = this.jwtHelper.generateToken(userDetails);
         LoginResponse response = LoginResponse.builder()
@@ -54,29 +76,6 @@ public class UserController {
                 .userName(userDetails.getUsername()).build();
         return ResponseEntity.ok(response);
     }
-
-//    private void doAuthenticate(String username, String password) {
-//        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username, password);
-//        try {
-//            authenticationManager.authenticate(authentication);
-//        } catch (BadCredentialsException e) {
-//            throw new BadCredentialsException("Invalid Username or Password!");
-//        }
-//    }
-private void doAuthenticate(String username, String password) {
-    System.out.println("Authenticating: " + username);
-    System.out.println("password: " + password);
-    try {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password)
-        );
-        System.out.println("Finish Authenticating: " + username);
-    } catch (Exception e) {
-        System.out.println("Authentication failed: " + e.getMessage());
-        throw e; // Re-throw if you want to propagate the error.
-    }
-}
-
 
 
     //Delete User
@@ -94,6 +93,7 @@ private void doAuthenticate(String username, String password) {
     //Get Own Info
     @GetMapping("/me")
     public String getMe() {
+
         return "me";
     }
 
