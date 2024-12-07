@@ -24,17 +24,18 @@ public class User {
     private String password;
     private String email;
 
-    private float height;
-    private float weight;
-    private float bmi;
-    private int age;
-    private boolean isFemale;
+    private Float height;
+    private Float weight;
+    private Float bmi;
+    private Integer age;
+    private Boolean female;
+
     private List<String> diseases;
     private List<String> allergies;
     private String exercise;
     private List<String> preferredFood;
 
-    private boolean isDisabled;
+    private Boolean disabled;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime lastLoginAt;
@@ -47,7 +48,7 @@ public class User {
                 float height,
                 float weight,
                 int age,
-                boolean isFemale,
+                boolean female,
                 List<String> diseases,
                 List<String> allergies,
                 String exercise,
@@ -58,17 +59,43 @@ public class User {
 
         this.height = height;
         this.weight = weight;
-        this.bmi = age;
-        this.isFemale = isFemale;
+        this.female = female;
         this.age = age;
-        this.isDisabled = false;
         this.exercise = exercise;
         this.preferredFood = preferredFood;
         this.diseases = diseases;
         this.allergies = allergies;
 
+        this.disabled = false;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
         this.passwordUpdatedAt = LocalDateTime.now();
     }
+
+
+    @Override
+    public String toString() {
+        return "{" +
+                "\"id\": \"" + id + "\"," +
+                "\"username\": \"" + username + "\"," +
+                "\"password\": \"" + password + "\"," +
+                "\"email\": \"" + email + "\"," +
+                "\"height\": " + height + "," +
+                "\"weight\": " + weight + "," +
+                "\"bmi\": " + bmi + "," +
+                "\"age\": " + age + "," +
+                "\"isFemale\": " + female + "," +
+                "\"diseases\": " + diseases + "," +
+                "\"allergies\": " + allergies + "," +
+                "\"exercise\": \"" + exercise + "\"," +
+                "\"preferredFood\": " + preferredFood + "," +
+                "\"isDisabled\": " + disabled + "," +
+                "\"createdAt\": \"" + createdAt + "\"," +
+                "\"updatedAt\": \"" + updatedAt + "\"," +
+                "\"lastLoginAt\": \"" + lastLoginAt + "\"," +
+                "\"passwordUpdatedAt\": \"" + passwordUpdatedAt + "\"," +
+                "\"profileImageUrl\": \"" + profileImageUrl + "\"" +
+                "}";
+    }
+
 }

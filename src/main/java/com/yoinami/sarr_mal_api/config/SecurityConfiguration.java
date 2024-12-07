@@ -73,7 +73,9 @@ public class SecurityConfiguration {
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/user/register", "/user/login", "/user/test").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers(HttpMethod.GET, "/view/login", "/view/**", "/static/js/**").permitAll()
+                        .requestMatchers("/view/**", "/resources/**", "/static/**", "/css/**", "/static/js/**", "/templates/**").permitAll()
+                        .anyRequest().permitAll()
                 );
 
         httpSecurity.authenticationProvider(authenticationProvider());

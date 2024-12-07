@@ -8,4 +8,7 @@ import org.springframework.data.mongodb.repository.Query;
 public interface UserRepository extends MongoRepository<User, String> {
     @Query("{username:'?0'}")
     User findItemByName(String name);
+
+    @Query(value = "{username: '?0'}", exists = true)
+    boolean existsByUsername(String username);
 }

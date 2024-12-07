@@ -6,8 +6,12 @@ import com.yoinami.sarr_mal_api.model.User;
 import com.yoinami.sarr_mal_api.repository.UserRepository;
 import com.yoinami.sarr_mal_api.security.JwtHelperUtils;
 
+import io.jsonwebtoken.io.IOException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,6 +19,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
@@ -23,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-@RestController
+@Controller
 @RequestMapping("/user")
 public class UserController {
     /*
@@ -46,16 +52,10 @@ public class UserController {
 
 
     //Register User
-    @PostMapping("/register")
-    public String register() {
-        try {
-            User newUser = controllerHelper.createUserClass();
-            userRepository.save(newUser);
-        } catch (Exception e) {
-            return e.getMessage();
-        }
-
-        return "Registered Successfully";
+    @GetMapping("/register")
+    public String register(Model model) {
+        model.addAttribute("User", new User());
+        return "register";
     }
 
     //Test Endpoint
@@ -65,16 +65,21 @@ public class UserController {
         return userList;
     }
 
-    //Login User
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
-        controllerHelper.doAuthenticate(loginRequest.getUsername(), loginRequest.getPassword());
-        UserDetails userDetails = userDetailsService.loadUserByUsername(loginRequest.getUsername());
-        String token = this.jwtHelper.generateToken(userDetails);
-        LoginResponse response = LoginResponse.builder()
-                .token(token)
-                .userName(userDetails.getUsername()).build();
-        return ResponseEntity.ok(response);
+    //Give out Login Page
+    @GetMapping("/login")
+    public String login(Model model, @RequestParam(defaultValue = "") String message) {
+        model.addAttribute("User", new User());
+        model.addAttribute("message", message);
+        return "sign-in";
+    }
+
+    //Give out Home Page
+    @GetMapping("/home")
+    public String home(@CookieValue(value = "JWT", defaultValue = "null") String token, Model model) {
+        String username = jwtHelper.getUsernameFromToken(token);
+        com.yoinami.sarr_mal_api.model.User account = userRepository.findItemByName(username);
+        model.addAttribute("user", account);
+        return "home";
     }
 
 
@@ -92,8 +97,7 @@ public class UserController {
 
     //Get Own Info
     @GetMapping("/me")
-    public String getMe() {
-
+    public String getMe(Model model) {
         return "me";
     }
 
