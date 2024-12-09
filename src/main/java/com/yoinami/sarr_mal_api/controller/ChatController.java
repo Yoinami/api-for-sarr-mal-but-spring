@@ -1,6 +1,5 @@
 package com.yoinami.sarr_mal_api.controller;
 
-import com.yoinami.sarr_mal_api.restservice.Greeting;
 import org.springframework.web.bind.annotation.*;
 
 

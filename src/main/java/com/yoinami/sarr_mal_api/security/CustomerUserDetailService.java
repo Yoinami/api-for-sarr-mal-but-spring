@@ -1,6 +1,5 @@
 package com.yoinami.sarr_mal_api.security;
 
-import com.yoinami.sarr_mal_api.model.Account;
 import com.yoinami.sarr_mal_api.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.User;

@@ -49,6 +49,7 @@ public class AuthController {
         cookie.setPath("/");       // Available across the application
         cookie.setMaxAge(24 * 60 * 60); // 1 day
         response.addCookie(cookie);
+
         return "redirect:/user/home";
     }
 
@@ -59,28 +60,31 @@ public class AuthController {
         boolean exists = (user != null);
         Map<String, Boolean> response = new HashMap<>();
         response.put("exists", exists);
+
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/confirm-account")
     public String confirmAccount(Model model, @ModelAttribute("User") User user) {
         // Check if the user exists by attempting to fetch a User
+
         user.setDiseases(new ArrayList<>());
         user.setAllergies(new ArrayList<>());
         user.setPreferredFood(new ArrayList<>());
         model.addAttribute("User", user);
         System.out.println(user);
+
         return "register-fill";
     }
 
     @PostMapping("/register")
     public String register(@ModelAttribute("User") User user) {
+
         try{
             controllerHelper.saveUserToDB(user);
         } catch (Exception e) {
             return "register";
         }
-
         return "redirect:/user/login?message='Successfully Registered'";
     }
 }

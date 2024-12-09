@@ -1,7 +1,5 @@
 package com.yoinami.sarr_mal_api.controller;
 
-import com.yoinami.sarr_mal_api.model.LoginRequest;
-import com.yoinami.sarr_mal_api.model.LoginResponse;
 import com.yoinami.sarr_mal_api.model.User;
 import com.yoinami.sarr_mal_api.repository.UserRepository;
 import com.yoinami.sarr_mal_api.security.JwtHelperUtils;
@@ -51,10 +49,11 @@ public class UserController {
     List<User> userList = new ArrayList<>();
 
 
-    //Register User
+    //Return The Register Page for User to register
     @GetMapping("/register")
     public String register(Model model) {
         model.addAttribute("User", new User());
+
         return "register";
     }
 
@@ -70,6 +69,7 @@ public class UserController {
     public String login(Model model, @RequestParam(defaultValue = "") String message) {
         model.addAttribute("User", new User());
         model.addAttribute("message", message);
+
         return "sign-in";
     }
 
@@ -79,14 +79,19 @@ public class UserController {
         String username = jwtHelper.getUsernameFromToken(token);
         com.yoinami.sarr_mal_api.model.User account = userRepository.findItemByName(username);
         model.addAttribute("user", account);
+
         return "home";
     }
 
 
     //Delete User
-    @DeleteMapping("/delete_me")
-    public String delete(@RequestParam("username") String username) {
-        return "Deleted Successfully";
+    @GetMapping("/delete_me")
+    public String delete(@CookieValue(value = "JWT", defaultValue = "null") String token, HttpServletResponse response) {
+        userRepository.delete(userRepository.findItemByName(jwtHelper.getUsernameFromToken(token)));
+        Cookie voidCookie = controllerHelper.setUpVoidCookie();
+        response.addCookie(voidCookie);
+
+        return "redirect:/user/login?message='Successfully Deleted'";
     }
 
     //Update User Info
@@ -102,8 +107,11 @@ public class UserController {
     }
 
     //Logout of the Account
-    @PutMapping("/logout")
-    public String logout() {
-        return "Logout Successfully";
+    @GetMapping("/logout")
+    public String logout(HttpServletResponse response) {
+        Cookie voidCookie = controllerHelper.setUpVoidCookie();
+        response.addCookie(voidCookie);
+
+        return "redirect:/user/login?message='Successfully Logged Out'";
     }
 }
