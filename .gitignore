@@ -31,6 +31,5 @@ build/
 
 ### VS Code ###
 .vscode/
-application.yml
 SecretConfig.java
 application.properties
