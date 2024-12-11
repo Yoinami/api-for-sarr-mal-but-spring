@@ -25,25 +25,21 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfiguration {
+
     @Autowired
     private JwtAuthEntryPoint authEntryPoint;
 
     @Autowired
-    private UserDetailsService userDetailsService;
+    private UserDetailsService userDetailsService; // Ensure your custom UserDetailsService is annotated with @Service
 
     @Bean
     public JwtAuthFilter authenticationJwtTokenFilter() {
-        return new JwtAuthFilter();
-    }
-
-    @Bean
-    public UserDetailsService userDetailsService() {
-        return new CustomerUserDetailService.CustomUserDetailsService();
+        return new JwtAuthFilter(); // Make sure this filter is properly implemented
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder(); // Use BCrypt for password encoding
     }
 
     @Bean
@@ -54,14 +50,11 @@ public class SecurityConfiguration {
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-
         authProvider.setUserDetailsService(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
-
         return authProvider;
     }
 
-    //TO-DO: need to lock with Spring Securtiy
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity
@@ -74,14 +67,15 @@ public class SecurityConfiguration {
                 )
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(HttpMethod.POST, "/user/register", "/user/login", "/user/test").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/view/login", "/view/**", "/static/js/**").permitAll()
-                        .requestMatchers("/view/**", "/resources/**", "/static/**", "/css/**", "/static/js/**", "/templates/**").permitAll()
-                        .anyRequest().permitAll()
+                        .requestMatchers(HttpMethod.GET, "/user/login", "/user/register").permitAll()
+                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/static/image/**", "/js/**", "/css/**").permitAll()
+                        .anyRequest().authenticated()
                 );
 
         httpSecurity.authenticationProvider(authenticationProvider());
-
         httpSecurity.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+
         return httpSecurity.build();
     }
 }

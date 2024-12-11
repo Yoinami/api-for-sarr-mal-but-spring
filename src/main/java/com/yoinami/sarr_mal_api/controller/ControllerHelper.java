@@ -2,8 +2,9 @@ package com.yoinami.sarr_mal_api.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yoinami.sarr_mal_api.config.SecretConfig;
-import com.yoinami.sarr_mal_api.model.Food;
 import com.yoinami.sarr_mal_api.payload.GeminiJsonResponse;
 import com.yoinami.sarr_mal_api.payload.GeminiResponse;
 import com.yoinami.sarr_mal_api.model.User;
@@ -14,13 +15,15 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 @Component
 public class ControllerHelper {
@@ -63,21 +66,12 @@ public class ControllerHelper {
         return tokenCookie;
     }
 
-    public GeminiJsonResponse generateRecommendedFoodFromGemini() throws JsonProcessingException {
+    public GeminiJsonResponse generateRecommendedFoodFromGemini(
+            String requestBody) throws JsonProcessingException {
 
         String apiKey = SecretConfig.getApiKeyForGemini();
         String url = "https://generativelanguage.googleapis.com/v1beta/tunedModels/food-suggestion-ai-v3-t2z0eh7qpaq8:generateContent?key=" + apiKey;
-        String requestBody = "{\n" +
-                "    \"contents\": [\n" +
-                "        {\n" +
-                "            \"parts\": [\n" +
-                "                {\n" +
-                "                    \"text\": \"{\\n    \\\"weight\\\": 72.0,\\n    \\\"height\\\": 176.0,\\n    \\\"age\\\": 20,\\n    \\\"diseases\\\": [[\\\"adhd\\\"]],\\n    \\\"allergies\\\": [[\\\"sea food\\\"]],\\n    \\\"gender\\\": \\\"Female\\\",\\n    \\\"exercise\\\": \\\"none\\\",\\n    \\\"preferred\\\": \\\"Burmese\\\",\\n    \\\"food-type\\\": \\\"Soup (Moderate sugar intake)\\\"}\\n\"\n" +
-                "                }\n" +
-                "            ]\n" +
-                "        }\n" +
-                "    ]\n" +
-                "}";
+
         // Create HTTP headers
         HttpHeaders headers = new HttpHeaders();
         headers.add("Content-Type", "application/json");
@@ -98,5 +92,73 @@ public class ControllerHelper {
         text = text.substring(8, text.length() - 3); //Strip ```json and ``` from the String
 
         return objectMapper.readValue(text, GeminiJsonResponse.class);
+    }
+
+    public String formatGeminiRequestBody(String json) throws Exception {
+        // Create the JSON object using Jackson
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        // Create the final structure
+        ObjectNode partNode = objectMapper.createObjectNode();
+        partNode.put("text", json); // Serialize the inner object as a string
+
+        ObjectNode partsNode = objectMapper.createObjectNode();
+        partsNode.set("parts", objectMapper.createArrayNode().add(partNode));
+
+        ObjectNode contentsNode = objectMapper.createObjectNode();
+        contentsNode.set("contents", objectMapper.createArrayNode().add(partsNode));
+
+        // Return the full JSON as a string
+        return objectMapper.writeValueAsString(contentsNode);
+    }
+
+    public String formatGeminiRequestJson(User user, String preferred, String foodType, float sugarLevel) throws Exception {
+        String gender = user.getFemale() ? "Female" : "Male";
+        String sugarStatus;
+
+        if (sugarLevel < 70) {
+            sugarStatus = " (Increase sugar intake)";
+        } else if (sugarLevel <= 99) {
+            sugarStatus = " (Maintain normal sugar intake)";
+        } else if (sugarLevel <= 125) {
+            sugarStatus = " (Moderate sugar intake)";
+        } else {
+            sugarStatus = " (Low sugar option)";
+        }
+
+        // Manually construct the JSON string with \n
+        StringBuilder jsonBuilder = new StringBuilder();
+        jsonBuilder.append("{\n");
+        jsonBuilder.append("    \"weight\": ").append(user.getWeight()).append(",\n");
+        jsonBuilder.append("    \"height\": ").append(user.getHeight()).append(",\n");
+        jsonBuilder.append("    \"age\": ").append(user.getAge()).append(",\n");
+
+        // Add diseases
+        jsonBuilder.append("    \"diseases\": [");
+        if (user.getDiseases() != null && !user.getDiseases().isEmpty()) {
+            jsonBuilder.append(String.join(", ", user.getDiseases().stream()
+                    .map(d -> "\"" + d + "\"") // Surround each disease with quotes
+                    .toArray(String[]::new)));
+        }
+        jsonBuilder.append("],\n");
+
+        // Add allergies
+        jsonBuilder.append("    \"allergies\": [");
+        if (user.getAllergies() != null && !user.getAllergies().isEmpty()) {
+            jsonBuilder.append(String.join(", ", user.getAllergies().stream()
+                    .map(a -> "\"" + a + "\"") // Surround each allergy with quotes
+                    .toArray(String[]::new)));
+        }
+        jsonBuilder.append("],\n");
+
+        // Add remaining fields
+        //Removed append(sugarStatus) to test ai
+        jsonBuilder.append("    \"gender\": \"").append(gender).append("\",\n");
+        jsonBuilder.append("    \"exercise\": \"").append(user.getExercise()).append("\",\n");
+        jsonBuilder.append("    \"preferred\": \"").append(preferred).append("\",\n");
+        jsonBuilder.append("    \"food-type\": \"").append(foodType).append("\"\n");
+        jsonBuilder.append("}");
+
+        return jsonBuilder.toString();
     }
 }

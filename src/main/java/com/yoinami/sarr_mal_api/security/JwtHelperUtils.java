@@ -2,11 +2,15 @@ package com.yoinami.sarr_mal_api.security;
 
 import com.yoinami.sarr_mal_api.config.SecretConfig;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
 import java.util.Base64;
@@ -67,8 +71,12 @@ public class JwtHelperUtils {
     }
 
     //validate token
-    public Boolean validateToken(String token, UserDetails userDetails) {
-        final String username = getUsernameFromToken(token);
-        return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    public Boolean validateToken(String token) {
+        try {
+            if(StringUtils.hasText(getUsernameFromToken(token)) && !isTokenExpired(token)) return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            System.err.println("Invalid JWT token: " + e.getMessage());
+        }
+        return false;
     }
 }

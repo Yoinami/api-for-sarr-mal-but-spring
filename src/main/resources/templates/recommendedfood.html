@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="auto" xmlns:th="http://www.thymeleaf.org">
+<head>
+
+    <script src="../static/js/color-modes.js" th:src="@{/js/color-modes.js}"></script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Today Meal Plan</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script>
+        async function generateMealPlan() {
+            const sugarLevel = document.getElementById("sugarNumber").value;
+            const preferred = document.getElementById("dropdown1").value;
+            const foodType = document.getElementById("dropdown2").value;
+
+            try {
+                const response = await fetch(`/food/generateRecommendedFood?sugarLevel=${sugarLevel}&preferred=${preferred}&foodType=${foodType}`, {
+                    method: "GET",
+                    credentials: "include", // Send cookies (JWT)
+                });
+
+                // if (!response.ok) {
+                //     throw new Error("Failed to generate meal plan");
+                // }
+
+                const mealPlan = await response.json();
+
+                // Save the meal plan to localStorage
+                localStorage.setItem("mealPlan", JSON.stringify(mealPlan));
+
+                // Render the meal plan on the page
+                //document.getElementById("mealPlanDisplay").innerHTML = JSON.stringify(mealPlan, null, 2);
+                populateCards(mealPlan);
+
+            } catch (error) {
+                console.error("Error generating meal plan:", error);
+                alert("Failed to generate meal plan.");
+            }
+        }
+
+        // Function to populate cards
+        function populateCards(mealPlan) {
+            const cardContainer = document.getElementById("RecommenedDisplay");
+
+            // Clear the container
+            cardContainer.innerHTML = "";
+
+            // Map each meal type to a card
+            const meals = [
+                { label: "Breakfast (Main)", food: mealPlan.breakfast_main },
+                { label: "Breakfast (Side)", food: mealPlan.breakfast_side },
+                { label: "Lunch (Main)", food: mealPlan.lunch_main },
+                { label: "Lunch (Side)", food: mealPlan.lunch_side },
+                { label: "Dinner (Main)", food: mealPlan.dinner_main },
+                { label: "Dinner (Side)", food: mealPlan.dinner_side },
+            ];
+
+            // Create and append cards
+            meals.forEach((meal) => {
+                if (meal.food) {
+                    const cardHTML = `
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <img src="${meal.food.imageURL || 'https://via.placeholder.com/300x150'}" class="card-img-top" alt="${meal.food.name}">
+                        <div class="card-body">
+                            <h5 class="card-title">${meal.food.name}</h5>
+                            <p class="card-text">Calories: ${meal.food.calories}</p>
+                            <p class="card-text">Category: ${meal.food.category}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+                    cardContainer.insertAdjacentHTML("beforeend", cardHTML);
+                }
+            });
+        }
+
+    </script>
+    <style>
+        .bd-placeholder-img {
+            font-size: 1.125rem;
+            text-anchor: middle;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+        }
+
+        @media (min-width: 768px) {
+            .bd-placeholder-img-lg {
+                font-size: 3.5rem;
+            }
+        }
+
+        .b-example-divider {
+            width: 100%;
+            height: 3rem;
+            background-color: rgba(0, 0, 0, .1);
+            border: solid rgba(0, 0, 0, .15);
+            border-width: 1px 0;
+            box-shadow: inset 0 .5em 1.5em rgba(0, 0, 0, .1), inset 0 .125em .5em rgba(0, 0, 0, .15);
+        }
+
+        .b-example-vr {
+            flex-shrink: 0;
+            width: 1.5rem;
+            height: 100vh;
+        }
+
+        .bi {
+            vertical-align: -.125em;
+            fill: currentColor;
+        }
+
+        .nav-scroller {
+            position: relative;
+            z-index: 2;
+            height: 2.75rem;
+            overflow-y: hidden;
+        }
+
+        .nav-scroller .nav {
+            display: flex;
+            flex-wrap: nowrap;
+            padding-bottom: 1rem;
+            margin-top: -1px;
+            overflow-x: auto;
+            text-align: center;
+            white-space: nowrap;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .btn-bd-primary {
+            --bd-violet-bg: #712cf9;
+            --bd-violet-rgb: 112.520718, 44.062154, 249.437846;
+
+            --bs-btn-font-weight: 600;
+            --bs-btn-color: var(--bs-white);
+            --bs-btn-bg: var(--bd-violet-bg);
+            --bs-btn-border-color: var(--bd-violet-bg);
+            --bs-btn-hover-color: var(--bs-white);
+            --bs-btn-hover-bg: #6528e0;
+            --bs-btn-hover-border-color: #6528e0;
+            --bs-btn-focus-shadow-rgb: var(--bd-violet-rgb);
+            --bs-btn-active-color: var(--bs-btn-hover-color);
+            --bs-btn-active-bg: #5a23c8;
+            --bs-btn-active-border-color: #5a23c8;
+        }
+
+        .bd-mode-toggle {
+            z-index: 1500;
+        }
+
+        .bd-mode-toggle .dropdown-menu .active .bi {
+            display: block !important;
+        }
+    </style>
+</head>
+<body>
+<!-- Dark MOde -->
+<svg xmlns="http://www.w3.org/2000/svg" class="d-none">
+    <symbol id="check2" viewBox="0 0 16 16">
+        <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+    </symbol>
+    <symbol id="circle-half" viewBox="0 0 16 16">
+        <path d="M8 15A7 7 0 1 0 8 1v14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z"/>
+    </symbol>
+    <symbol id="moon-stars-fill" viewBox="0 0 16 16">
+        <path d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"/>
+        <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"/>
+    </symbol>
+    <symbol id="sun-fill" viewBox="0 0 16 16">
+        <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"/>
+    </symbol>
+</svg>
+
+<div class="dropdown position-fixed bottom-0 end-0 mb-3 me-3 bd-mode-toggle" style="z-index: 10">
+    <button class="btn btn-bd-primary py-2 dropdown-toggle d-flex align-items-center"
+            id="bd-theme"
+            type="button"
+            aria-expanded="false"
+            data-bs-toggle="dropdown"
+            aria-label="Toggle theme (auto)">
+        <svg class="bi my-1 theme-icon-active" width="1em" height="1em"><use href="#circle-half"></use></svg>
+        <span class="visually-hidden" id="bd-theme-text">Toggle theme</span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bd-theme-text">
+        <li>
+            <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light" aria-pressed="false">
+                <svg class="bi me-2 opacity-50" width="1em" height="1em"><use href="#sun-fill"></use></svg>
+                Light
+                <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
+            </button>
+        </li>
+        <li>
+            <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="dark" aria-pressed="false">
+                <svg class="bi me-2 opacity-50" width="1em" height="1em"><use href="#moon-stars-fill"></use></svg>
+                Dark
+                <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
+            </button>
+        </li>
+        <li>
+            <button type="button" class="dropdown-item d-flex align-items-center active" data-bs-theme-value="auto" aria-pressed="true">
+                <svg class="bi me-2 opacity-50" width="1em" height="1em"><use href="#circle-half"></use></svg>
+                Auto
+                <svg class="bi ms-auto d-none" width="1em" height="1em"><use href="#check2"></use></svg>
+            </button>
+        </li>
+    </ul>
+</div>
+
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-light shadow">
+    <div class="container">
+        <!-- Brand Name -->
+        <div>
+            <img src="/image/sarrmal-logo.png" alt="" width="50" height="50">
+            <a class="navbar-brand fw-bold text-primary" href="#">Sarr Mal</a>
+        </div>
+
+        <!-- Toggler Button for Mobile View -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Navbar Links -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item mx-2">
+                    <a class="nav-link active" aria-current="page" href="/user/home" th:href="@{/user/home}">Home</a>
+                </li>
+                <li class="nav-item mx-2">
+                    <a class="nav-link" href="/user/me" th:href="@{/user/me}">Account</a>
+                </li>
+                <li class="nav-item mx-2">
+                    <a class="nav-link" href="" th:href="@{/food/getMealPlan}">
+                        <i class="bi bi-heart-fill me-1"></i>Food Recommendations
+                    </a>
+                </li>
+                <li class="nav-item mx-2">
+                    <a class="nav-link text-danger fw-semibold" href="/logout" th:href="@{/user/logout}">
+                        <i class="bi bi-box-arrow-right me-1"></i>Logout
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+<div class="container mt-5">
+    <!-- Title -->
+    <h1 class="text-center">Today Meal Plan</h1>
+
+    <!-- Date and Generate Button -->
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <p class="mb-0">Date: 2024-12-09</p>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#generateModal">Generate</button>
+    </div>
+
+    <div th:if="${mealPlan != null}">
+        <!-- Content to render if the model attribute is present -->
+        <span style="display: none" id="mealPlanId" th:text="${mealPlan.id}"></span>
+        <div class="row mt-4">
+            <!-- Food Card Template -->
+            <!-- Breakfast Main -->
+            <div class="col-md-6 mb-4">
+                <div class="card food-card" onclick="toggleSelected(this)" id="breakfast_main_div" th:classappend="${mealPlan.breakfast_main.eatenAt != null ? 'bg-success' : ''}">
+                    <img th:src="${mealPlan.breakfast_main.imageURL}" class="card-img-top" alt="Breakfast Main Image">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${mealPlan.breakfast_main.name}">Breakfast Main</h5>
+                        <p class="card-text" th:text="'Calories: ' + ${mealPlan.breakfast_main.calories}">Calories: 200</p>
+                        <p class="card-text" th:text="'Recommended Meal Time: ' + ${mealPlan.breakfast_main.mealTime}">Recommended Meal Time: 8:00 AM</p>
+                        <button class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#details1">Details</button>
+                        <div id="details1" class="collapse mt-2">
+                            <p th:text="'Category: ' + ${mealPlan.breakfast_main.category}">Category: Grain</p>
+                            <p th:text="'Ingredients: ' + ${#strings.arrayJoin(mealPlan.breakfast_main.ingredients, ', ')}">Ingredients: Rice, Fish</p>
+                            <p th:text="'How to Cook: ' + ${mealPlan.breakfast_main.howToCook}">How to Cook: Simmer with spices and serve hot.</p>
+                            <button class="btn btn-success" onclick="tickTheFood('breakfast_main')" th:if="${mealPlan.breakfast_main.eatenAt == null}">Eaten</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Breakfast-side -->
+            <div class="col-md-6 mb-4">
+                <div class="card food-card" onclick="toggleSelected(this)" id="breakfast_side_div" th:classappend="${mealPlan.breakfast_side.eatenAt != null ? 'bg-success' : ''}">
+                    <img th:src="${mealPlan.breakfast_side.imageURL}" class="card-img-top" alt="Breakfast Side Image">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${mealPlan.breakfast_side.name}">Breakfast Side</h5>
+                        <p class="card-text" th:text="'Calories: ' + ${mealPlan.breakfast_side.calories}">Calories: 200</p>
+                        <p class="card-text" th:text="'Recommended Meal Time: ' + ${mealPlan.breakfast_side.mealTime}">Recommended Meal Time: 8:00 AM</p>
+                        <button class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#details2">Details</button>
+                        <div id="details2" class="collapse mt-2">
+                            <p th:text="'Category: ' + ${mealPlan.breakfast_side.category}">Category: Grain</p>
+                            <p th:text="'Ingredients: ' + ${#strings.arrayJoin(mealPlan.breakfast_side.ingredients, ', ')}">Ingredients: Rice, Fish</p>
+                            <p th:text="'How to Cook: ' + ${mealPlan.breakfast_side.howToCook}">How to Cook: Simmer with spices and serve hot.</p>
+                            <button class="btn btn-success" onclick="tickTheFood('breakfast_side')" th:if="${mealPlan.breakfast_side.eatenAt == null}">Eaten</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lunch Main -->
+            <div class="col-md-6 mb-4">
+                <div class="card food-card" onclick="toggleSelected(this)" id="lunch_main_div" th:classappend="${mealPlan.lunch_main.eatenAt != null ? 'bg-success' : ''}">
+                    <img th:src="${mealPlan.lunch_main.imageURL}" class="card-img-top" alt="Breakfast Main Image">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${mealPlan.lunch_main.name}">Breakfast Main</h5>
+                        <p class="card-text" th:text="'Calories: ' + ${mealPlan.lunch_main.calories}">Calories: 200</p>
+                        <p class="card-text" th:text="'Recommended Meal Time: ' + ${mealPlan.lunch_main.mealTime}">Recommended Meal Time: 8:00 AM</p>
+                        <button class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#details3">Details</button>
+                        <div id="details3" class="collapse mt-2">
+                            <p th:text="'Category: ' + ${mealPlan.lunch_main.category}">Category: Grain</p>
+                            <p th:text="'Ingredients: ' + ${#strings.arrayJoin(mealPlan.lunch_main.ingredients, ', ')}">Ingredients: Rice, Fish</p>
+                            <p th:text="'How to Cook: ' + ${mealPlan.lunch_main.howToCook}">How to Cook: Simmer with spices and serve hot.</p>
+                            <button class="btn btn-success" onclick="tickTheFood('lunch_main')" th:if="${mealPlan.lunch_main.eatenAt == null}">Eaten</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lunch-side -->
+            <div class="col-md-6 mb-4">
+                <div class="card food-card" onclick="toggleSelected(this)" id="lunch_side_div" th:classappend="${mealPlan.lunch_side.eatenAt != null ? 'bg-success' : ''}">
+                    <img th:src="${mealPlan.lunch_side.imageURL}" class="card-img-top" alt="Breakfast Side Image">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${mealPlan.lunch_side.name}">Breakfast Side</h5>
+                        <p class="card-text" th:text="'Calories: ' + ${mealPlan.lunch_side.calories}">Calories: 200</p>
+                        <p class="card-text" th:text="'Recommended Meal Time: ' + ${mealPlan.lunch_side.mealTime}">Recommended Meal Time: 8:00 AM</p>
+                        <button class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#details4">Details</button>
+                        <div id="details4" class="collapse mt-2">
+                            <p th:text="'Category: ' + ${mealPlan.lunch_side.category}">Category: Grain</p>
+                            <p th:text="'Ingredients: ' + ${#strings.arrayJoin(mealPlan.lunch_side.ingredients, ', ')}">Ingredients: Rice, Fish</p>
+                            <p th:text="'How to Cook: ' + ${mealPlan.lunch_side.howToCook}">How to Cook: Simmer with spices and serve hot.</p>
+                            <button class="btn btn-success" onclick="tickTheFood('lunch_side')" th:if="${mealPlan.lunch_side.eatenAt == null}">Eaten</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dinner Main -->
+            <div class="col-md-6 mb-4">
+                <div class="card food-card" onclick="toggleSelected(this)" id="dinner_main_div" th:classappend="${mealPlan.dinner_main.eatenAt != null ? 'bg-success' : ''}">
+                    <img th:src="${mealPlan.dinner_main.imageURL}" class="card-img-top" alt="Breakfast Main Image">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${mealPlan.dinner_main.name}">Breakfast Main</h5>
+                        <p class="card-text" th:text="'Calories: ' + ${mealPlan.dinner_main.calories}">Calories: 200</p>
+                        <p class="card-text" th:text="'Recommended Meal Time: ' + ${mealPlan.dinner_main.mealTime}">Recommended Meal Time: 8:00 AM</p>
+                        <button class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#details5">Details</button>
+                        <div id="details5" class="collapse mt-2">
+                            <p th:text="'Category: ' + ${mealPlan.dinner_main.category}">Category: Grain</p>
+                            <p th:text="'Ingredients: ' + ${#strings.arrayJoin(mealPlan.dinner_main.ingredients, ', ')}">Ingredients: Rice, Fish</p>
+                            <p th:text="'How to Cook: ' + ${mealPlan.dinner_main.howToCook}">How to Cook: Simmer with spices and serve hot.</p>
+                            <button class="btn btn-success" onclick="tickTheFood('dinner_main')" th:if="${mealPlan.dinner_main.eatenAt == null}">Eaten</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dinner-side -->
+            <div class="col-md-6 mb-4" id="dinner_side_div">
+                <div class="card food-card" onclick="toggleSelected(this)" th:classappend="${mealPlan.dinner_side.eatenAt != null ? 'bg-success' : ''}">
+                    <img th:src="${mealPlan.dinner_side.imageURL}" class="card-img-top" alt="Breakfast Side Image">
+                    <div class="card-body">
+                        <h5 class="card-title" th:text="${mealPlan.dinner_side.name}">Breakfast Side</h5>
+                        <p class="card-text" th:text="'Calories: ' + ${mealPlan.dinner_side.calories}">Calories: 200</p>
+                        <p class="card-text" th:text="'Recommended Meal Time: ' + ${mealPlan.dinner_side.mealTime}">Recommended Meal Time: 8:00 AM</p>
+                        <button class="btn btn-secondary" data-bs-toggle="collapse" data-bs-target="#details6">Details</button>
+                        <div id="details6" class="collapse mt-2">
+                            <p th:text="'Category: ' + ${mealPlan.dinner_side.category}">Category: Grain</p>
+                            <p th:text="'Ingredients: ' + ${#strings.arrayJoin(mealPlan.dinner_side.ingredients, ', ')}">Ingredients: Rice, Fish</p>
+                            <p th:text="'How to Cook: ' + ${mealPlan.dinner_side.howToCook}">How to Cook: Simmer with spices and serve hot.</p>
+                            <button class="btn btn-success" onclick="tickTheFood('dinner_side')" th:if="${mealPlan.dinner_side.eatenAt == null}">Eaten</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div th:unless="${mealPlan != null}">
+        <!-- Content to render if the model attribute is not present -->
+        <div class="d-flex justify-content-center">
+            <span>There is nothing to recommended yet please generate a meal plan.</span>
+        </div>
+    </div>
+
+</div>
+
+<!-- Modal for Generate -->
+<div class="modal fade" id="generateModal" tabindex="-1" aria-labelledby="generateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="generateModalLabel">Generate Meal Plan</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Dropdown Inputs -->
+                <div class="row">
+                    <div class="mb-3 col-md-6">
+                    <label for="dropdown1" class="form-label">Preferred Food</label>
+                    <select class="form-select" id="dropdown1">
+                        <option value="None">None</option>
+                        <option value="2"></option>
+                        <option value="3">3</option>
+                    </select>
+                    </div>
+                    <div class="mb-3 col-md-6">
+                        <label for="dropdown2" class="form-label">Type of Food</label>
+                        <select class="form-select" id="dropdown2">
+                            <option value="None">None</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                        </select>
+                    </div>
+                </div>
+
+
+                <!-- Range Input -->
+                <div class="d-flex align-items-center mb-3">
+                    <label for="sugarRange" class="form-label me-3">Sugar Level</label>
+                    <input type="range" class="form-range" id="sugarRange" min="50" max="500" step="0.1">
+                    <input type="number" class="form-control ms-3" id="sugarNumber" min="50" max="500" step="0.1" style="width: 80px;" value="100">
+                </div>
+
+
+                <!-- Two Buttons -->
+                <div class="d-flex justify-content-around gap-2 mb-3">
+                    <button class="btn btn-warning mx-1 w-100" id="refreshButton" onclick="generateMealPlan()">Refresh</button>
+                    <button class="btn btn-success mx-1 w-100" id="confirmButton" onclick="confirmRecommendedFood()">Confirm</button>
+                </div>
+
+                <!-- Food Cards in Modal -->
+                <div class="row" id="RecommenedDisplay">
+                    <!-- Repeat this card structure for 6 cards -->
+                    <div class="col-md-6 mb-4">
+                        <div class="card generate_food_card">
+                            <img src="https://via.placeholder.com/300x150" class="card-img-top" alt="Food Image">
+                            <div class="card-body">
+                                <h5 class="card-title">Food Name</h5>
+                                <p class="card-text">Calories: 200</p>
+                                <p class="card-text">Category: Grain</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="card generate_food_card">
+                            <img src="https://via.placeholder.com/300x150" class="card-img-top" alt="Food Image">
+                            <div class="card-body">
+                                <h5 class="card-title">Food Name</h5>
+                                <p class="card-text">Calories: 200</p>
+                                <p class="card-text">Category: Grain</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="card generate_food_card">
+                            <img src="https://via.placeholder.com/300x150" class="card-img-top" alt="Food Image">
+                            <div class="card-body">
+                                <h5 class="card-title">Food Name</h5>
+                                <p class="card-text">Calories: 200</p>
+                                <p class="card-text">Category: Grain</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="card generate_food_card">
+                            <img src="https://via.placeholder.com/300x150" class="card-img-top" alt="Food Image">
+                            <div class="card-body">
+                                <h5 class="card-title">Food Name</h5>
+                                <p class="card-text">Calories: 200</p>
+                                <p class="card-text">Category: Grain</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="card generate_food_card">
+                            <img src="https://via.placeholder.com/300x150" class="card-img-top" alt="Food Image">
+                            <div class="card-body">
+                                <h5 class="card-title">Food Name</h5>
+                                <p class="card-text">Calories: 200</p>
+                                <p class="card-text">Category: Grain</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <div class="card generate_food_card">
+                            <img src="https://via.placeholder.com/300x150" class="card-img-top" alt="Food Image">
+                            <div class="card-body">
+                                <h5 class="card-title">Food Name</h5>
+                                <p class="card-text">Calories: 200</p>
+                                <p class="card-text">Category: Grain</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- specify focus on click section -->
+<script>
+    function toggleSelected(card) {
+    // Remove 'border-primary' from all cards
+    document.querySelectorAll('.food-card').forEach(c => c.classList.remove('border-primary'));
+    // Add 'border-primary' to the selected card
+    card.classList.toggle('border-primary');
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Check if mealPlan exists in localStorage
+        const mealPlan = localStorage.getItem("mealPlan");
+        if (mealPlan) {
+            console.log(mealPlan);
+            try {
+                const parsedMealPlan = JSON.parse(mealPlan);
+                populateCards(parsedMealPlan);
+            } catch (error) {
+                console.error("Error parsing meal plan:", error);
+            }
+        }
+    });
+</script>
+
+<script>
+    //JS Script to sync the range input and the number input
+    const sugarRange = document.getElementById('sugarRange');
+    const sugarNumber = document.getElementById('sugarNumber');
+
+    // Update number input when range changes
+    sugarRange.addEventListener('input', () => {
+        sugarNumber.value = sugarRange.value;
+    });
+
+    // Update range input when number changes
+    sugarNumber.addEventListener('input', () => {
+        sugarRange.value = sugarNumber.value;
+    });
+</script>
+<script>
+    async function confirmRecommendedFood() {
+        try {
+            // Retrieve MealPlan from localStorage
+            const mealPlanJSON = localStorage.getItem("mealPlan");
+
+            if (!mealPlanJSON) {
+                alert("No meal plan found in localStorage to confirm.");
+                return;
+            }
+
+            // Parse JSON to ensure it's valid
+            const mealPlan = JSON.parse(mealPlanJSON);
+
+            // Send the MealPlan to the server
+            const response = await fetch("/food/confrimRecommendedFood", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                credentials: "include",
+                body: JSON.stringify(mealPlan),
+            });
+
+            // Handle the server response
+            if (response.ok) {
+                const message = await response.text();
+                alert(message);
+                location.reload();
+                console.log("MealPlan confirmed:", message);
+            } else {
+                const errorMessage = await response.text();
+                alert(`Error confirming meal plan: ${errorMessage}`);
+                console.error("Error response:", errorMessage);
+            }
+        } catch (error) {
+            console.error("Failed to confirm meal plan:", error);
+            alert("An error occurred while confirming the meal plan.");
+        }
+    }
+
+    //function to tick the food
+    async function tickTheFood(strin) {
+        const id = document.getElementById("mealPlanId").innerHTML;
+        var code = null;
+
+        switch(strin) {
+            case "breakfast_main":
+                code = document.getElementById("breakfast_main_div");
+                break;
+            case "breakfast_side":
+                code = document.getElementById("breakfast_side_div");
+                break;
+            case "lunch_main":
+                code = document.getElementById("lunch_main_div");
+                break;
+            case "lunch_side":
+                code = document.getElementById("lunch_side_div");
+                break;
+            case "dinner_main":
+                code = document.getElementById("dinner_main_div");
+                break;
+            case "dinner_side":
+                code = document.getElementById("dinner_side_div");
+                break;
+            case null:
+                alert(`Invalid Food Name`);
+                console.error("Invalid Food Name");
+                return;
+            default:
+                alert(`Error marking the food`);
+                console.error("Error marking the food");
+        }
+
+        try {
+            const response = await fetch(`/food/tickMealPlan?id=${id}&meal=${strin}`, {
+                method: "PUT",
+                credentials: "include", // Send cookies (JWT)
+            });
+            if (response.ok) {
+                code.classList.add("bg-success");
+                // Find the button element inside the card
+                const button = code.querySelector("button.btn-success");
+                if (button) {
+                    button.style.display = "none";
+                }
+            } else {
+                const errorMessage = await response.text();
+                alert(`Error confirming meal plan: ${errorMessage}`);
+                console.error("Error response:", errorMessage);
+            }
+
+        } catch (error) {
+            console.error("Error generating meal plan:", error);
+            alert("Failed to generate meal plan.");
+        }
+    }
+</script>
+
+</body>
+</html>

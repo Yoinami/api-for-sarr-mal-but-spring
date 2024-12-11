@@ -100,10 +100,6 @@
         <label class="form-label">Diseases</label>
         <div>
           <div class="form-check">
-            <input type="checkbox" class="form-check-input" id="disease1" th:field="*{diseases}" value="Diabetes" th:checked="${User.diseases.contains('Diabetes')}">
-            <label class="form-check-label" for="disease1">Diabetes</label>
-          </div>
-          <div class="form-check">
             <input type="checkbox" class="form-check-input" id="disease2" th:field="*{diseases}" value="Hypertension" th:checked="${User.diseases.contains('Hypertension')}">
             <label class="form-check-label" for="disease2">Hypertension</label>
           </div>

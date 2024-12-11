@@ -1,9 +1,14 @@
 package com.yoinami.sarr_mal_api.controller;
 
+import com.yoinami.sarr_mal_api.model.Food;
+import com.yoinami.sarr_mal_api.model.MealPlan;
 import com.yoinami.sarr_mal_api.model.User;
+import com.yoinami.sarr_mal_api.repository.MealPlanRepository;
 import com.yoinami.sarr_mal_api.repository.UserRepository;
 import com.yoinami.sarr_mal_api.security.JwtHelperUtils;
 
+import com.yoinami.sarr_mal_api.service.MealPlanService;
+import com.yoinami.sarr_mal_api.service.UserService;
 import io.jsonwebtoken.io.IOException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
@@ -47,6 +52,10 @@ public class UserController {
     private UserRepository userRepository;
 
     List<User> userList = new ArrayList<>();
+    @Autowired
+    private UserService userService;
+    @Autowired
+    private MealPlanRepository mealPlanRepository;
 
 
     //Return The Register Page for User to register
@@ -78,7 +87,13 @@ public class UserController {
     public String home(@CookieValue(value = "JWT", defaultValue = "null") String token, Model model) {
         String username = jwtHelper.getUsernameFromToken(token);
         com.yoinami.sarr_mal_api.model.User account = userRepository.findItemByName(username);
+        List<MealPlan> lsMealPlan = mealPlanRepository.findAllMealPlanByUserId(account.getId());
+        List<Food> lsFood = MealPlanService.getEatenFoodsFromMealPlansList(lsMealPlan);
+
         model.addAttribute("user", account);
+        model.addAttribute("numberOfMealPlan", lsMealPlan.size());
+        model.addAttribute("numberOfEatenFood", lsFood.size());
+        model.addAttribute("lastFood", lsFood.getLast());
 
         return "home";
     }
@@ -87,23 +102,37 @@ public class UserController {
     //Delete User
     @GetMapping("/delete_me")
     public String delete(@CookieValue(value = "JWT", defaultValue = "null") String token, HttpServletResponse response) {
-        userRepository.delete(userRepository.findItemByName(jwtHelper.getUsernameFromToken(token)));
-        Cookie voidCookie = controllerHelper.setUpVoidCookie();
-        response.addCookie(voidCookie);
-
+        try {
+            userRepository.delete(userRepository.findItemByName(jwtHelper.getUsernameFromToken(token))); //delete the user
+            Cookie voidCookie = controllerHelper.setUpVoidCookie();
+            response.addCookie(voidCookie); //Replace JWT token with a void cookie
+        } catch (Exception e) {
+            return e.getMessage();
+        }
         return "redirect:/user/login?message='Successfully Deleted'";
     }
 
     //Update User Info
-    @PutMapping("/update")
-    public String update(@RequestParam("username") String username, @RequestParam("password") String password) {
-        return "Updated Successfully";
+    //IDEA: we can just put id in the JWT claims in order to reduce read query to the database
+    @PostMapping("/update")
+    public String update(@CookieValue(value = "JWT", defaultValue = "null") String token,
+                         @ModelAttribute("user") User user) {
+        String username = jwtHelper.getUsernameFromToken(token);
+        User oldinfo = userRepository.findItemByName(username);
+        if (username.equals(user.getUsername())) {
+            userService.updateUserInfo(oldinfo, user);
+            return "redirect:/user/me?message='Successfully Updated'";
+        }
+        return "redirect:/error";
     }
 
     //Get Own Info
     @GetMapping("/me")
-    public String getMe(Model model) {
-        return "me";
+    public String getMe(@CookieValue(value = "JWT", defaultValue = "null") String token,
+            Model model, @RequestParam(defaultValue = "") String message) {
+        if(message != null) model.addAttribute("message", message);
+        model.addAttribute("user", userRepository.findItemByName(jwtHelper.getUsernameFromToken(token)));
+        return "userinfo";
     }
 
     //Logout of the Account
