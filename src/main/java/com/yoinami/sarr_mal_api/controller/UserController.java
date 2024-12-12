@@ -86,9 +86,12 @@ public class UserController {
     @GetMapping("/home")
     public String home(@CookieValue(value = "JWT", defaultValue = "null") String token, Model model) {
         String username = jwtHelper.getUsernameFromToken(token);
+        Food templateFood = new Food();
+        templateFood.setName("None");
         com.yoinami.sarr_mal_api.model.User account = userRepository.findItemByName(username);
         List<MealPlan> lsMealPlan = mealPlanRepository.findAllMealPlanByUserId(account.getId());
         List<Food> lsFood = MealPlanService.getEatenFoodsFromMealPlansList(lsMealPlan);
+        if(lsFood.isEmpty()) lsFood.add(templateFood);
 
         model.addAttribute("user", account);
         model.addAttribute("numberOfMealPlan", lsMealPlan.size());
